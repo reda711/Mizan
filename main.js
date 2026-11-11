@@ -22,6 +22,7 @@ const formattedDate = today.toLocaleDateString("en-GB", {
 welcome.textContent = formattedDate;
 
 async function getgoldprice(currency) {
+    try {
     const res2 = await fetch(
         `https://xaus.com/api/v1/spot?currency=${currency}&unit=gram`,
     );
@@ -29,6 +30,10 @@ async function getgoldprice(currency) {
         lastUpdated.textContent = "Failed to fetch data";
         dot.classList.add("bg-red-500");
         throw new Error("Failed to fetch data from API");
+    }}
+    catch (error){
+        console.error(error);
+        
     }
     dot.classList.add("bg-green-500");
     const Gram = await res2.json();
@@ -59,3 +64,46 @@ async function getdate() {
     const data = await res2.json();
     return data.data_state.as_of;
 }
+
+
+refresh.addEventListener("click", async () => {
+    refresh.textContent = "↻ Refresh";
+    let goldresult = 0;
+    let silverresult = 0;
+    let date = await getdate();
+    date = date.slice(0, 16).replace("T", " ");
+    lastUpdated.textContent = `Last Updated on : ${date} GMT`;
+    let currency = "";
+    if (select.value === "MAD") {
+        goldresult = await getgoldprice("MAD");
+        currency = "DH";
+        golddashboard.innerHTML = `
+        <p class="text-xl"> Current gold price is : <span class="text-[#FFD700]">${goldresult.toFixed(2)} ${currency}</span> per Gram </p>
+        `;
+        silverresult = await getsilverprice("MAD");
+
+        silverdashboard.innerHTML = `
+        <p class="text-xl"> Current silver price is : <span class="text-[#C0C0C0]">${silverresult.toFixed(2)} ${currency}</span> per Gram </p>
+        `;
+    } else if (select.value === "USD") {
+        currency = "$";
+        goldresult = await getgoldprice("USD");
+        golddashboard.innerHTML = `
+        <p class="text-xl"> Current gold price is : <span class="text-[#FFD700]">${goldresult.toFixed(2)} ${currency}</span> per Gram </p>
+        `;
+        silverresult = await getsilverprice("USD");
+        silverdashboard.innerHTML = `
+        <p class="text-xl"> Current silver price is : <span class="text-[#C0C0C0]">${silverresult.toFixed(2)} ${currency}</span> per Gram </p>
+        `;
+    } else if (select.value === "EUR") {
+        currency = "€";
+        goldresult = await getgoldprice("EUR");
+        golddashboard.innerHTML = `
+        <p class="text-xl"> Current gold price is : <span class="text-[#FFD700]">${goldresult.toFixed(2)} ${currency}</span> per Gram </p>
+        `;
+        silverresult = await getsilverprice("EUR");
+        silverdashboard.innerHTML = `
+        <p class="text-xl"> Current silver price is : <span class="text-[#C0C0C0]">${silverresult.toFixed(2)} ${currency}</span> per Gram </p>
+        `;
+    }
+});
