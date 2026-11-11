@@ -26,3 +26,18 @@ async function getgoldprice(currency) {
     const Gram = await res2.json();
     return Gram.xau.price;
 }
+
+async function getsilverprice(currency) {
+    const response = await fetch(
+        `https://xaus.com/api/v1/spot?currency=${currency}&unit=gram`,
+    );
+    
+    const data = await response.json();
+    
+    const goldPricePerGram = data.xau.price;
+    const goldSilverRatio = data.gold_silver_ratio;
+    
+    const silverPricePerGram = goldPricePerGram / goldSilverRatio;
+    
+    return silverPricePerGram;
+}
