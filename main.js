@@ -12,6 +12,14 @@ const calculatediv = document.getElementById("calculation-result");
 const metaltype = document.getElementById("metal-type");
 const welcome = document.getElementById("date");
 const calculatecurrency = document.getElementById("calculator-currency")
+const today = new Date();
+const formattedDate = today.toLocaleDateString("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+welcome.textContent = formattedDate;
 
 async function getgoldprice(currency) {
     const res2 = await fetch(
@@ -31,7 +39,9 @@ async function getsilverprice(currency) {
     const response = await fetch(
         `https://xaus.com/api/v1/spot?currency=${currency}&unit=gram`,
     );
-    
+    if(!response.ok){
+        throw new Error("Failed to fetch data from API")
+    }
     const data = await response.json();
     
     const goldPricePerGram = data.xau.price;
@@ -40,4 +50,12 @@ async function getsilverprice(currency) {
     const silverPricePerGram = goldPricePerGram / goldSilverRatio;
     
     return silverPricePerGram;
+}
+
+async function getdate() {
+    const res2 = await fetch(
+        `https://xaus.com/api/v1/spot?currency=USD&unit=gram`,
+    );
+    const data = await res2.json();
+    return data.data_state.as_of;
 }
