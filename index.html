@@ -69,7 +69,7 @@
             id="refresh"
             class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-5 py-3 rounded-xl shadow-sm transition duration-200 flex items-center gap-2"
           >
-            ↻ Get Prices
+            Get Prices
           </button>
         </div>
       </section>
@@ -117,6 +117,88 @@
 
         <div id="silverdashboard" class=""></div>
       </section>
+
+<!-- Price History -->
+<section class="mb-10">
+  <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-5">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-xl">
+        📈
+      </div>
+
+      <div>
+        <h3 class="text-xl font-bold text-slate-900">Price History</h3>
+        <p class="text-sm text-slate-500">
+          Track precious metal price movements over time.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <select
+        id="history-metal"
+        class="border border-slate-300 rounded-xl px-4 py-2 bg-white font-semibold outline-none focus:ring-2 focus:ring-amber-500"
+      >
+        <option value="gold">Gold</option>
+        <option value="silver">Silver</option>
+      </select>
+
+      <select
+        id="history-period"
+        class="border border-slate-300 rounded-xl px-4 py-2 bg-white font-semibold outline-none focus:ring-2 focus:ring-amber-500"
+      >
+        <option value="7">Last 7 Days</option>
+        <option value="30">Last 30 Days</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <p class="text-sm text-slate-500 mb-2">Highest Price</p>
+      <p id="history-highest" class="text-2xl font-bold text-green-600">
+        -- 
+      </p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      <p class="text-sm text-slate-500 mb-2">Lowest Price</p>
+      <p id="history-lowest" class="text-2xl font-bold text-red-500">
+        --
+      </p>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h4 id="history-chart-title" class="font-bold text-slate-900">
+          Gold Price History
+        </h4>
+        <p class="text-sm text-slate-400">
+          Price per gram
+        </p>
+      </div>
+
+      <span
+        id="history-currency"
+        class="text-sm font-semibold text-slate-500"
+      >
+        MAD
+      </span>
+    </div>
+
+    <div class="relative w-full h-72">
+      <canvas id="history-chart"></canvas>
+    </div>
+
+  </div>
+</section>
+
       <!-- Metal Price Calculator -->
       <section class="mb-10">
         <div class="flex items-center gap-3 mb-5">

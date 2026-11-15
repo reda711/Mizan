@@ -1,6 +1,4 @@
-// https://xaus.com/api/v1/history
 const select = document.getElementById("currency");
-const savedselect = localStorage.getItem("select")
 const refresh = document.getElementById("refresh");
 const golddashboard = document.getElementById("golddashboard");
 const silverdashboard = document.getElementById("silverdashboard");
@@ -14,6 +12,8 @@ const calculatediv = document.getElementById("calculation-result");
 const metaltype = document.getElementById("metal-type");
 const welcome = document.getElementById("date");
 const calculatecurrency = document.getElementById("calculator-currency");
+const lowest = document.getElementById("history-lowest")
+const highest = document.getElementById("history-highest")
 const today = new Date();
 const formattedDate = today.toLocaleDateString("en-GB", {
   weekday: "long",
@@ -42,7 +42,6 @@ async function getgoldprice(currency) {
 
     return price;
   } catch (error) {
-    console.error(error);
     throw error;
   }
 }
@@ -56,10 +55,12 @@ async function getsilverprice(currency) {
       throw new Error("Failed to fetch data from API");
     }
     const data = await response.json();
-
     const goldPricePergram = data.xau.price;
     const goldSilverRatio = data.gold_silver_ratio;
-
+    if (typeof goldSilverRatio !== "number" || !Number.isFinite(goldSilverRatio)) {
+      throw new Error("Invalid gold price");
+    }
+    
     const silverPricePergram = goldPricePergram / goldSilverRatio;
     return silverPricePergram;
   } catch (error) {
@@ -121,6 +122,7 @@ refresh.addEventListener("click", async () => {
     date = date.slice(0, 16).replace("T", " ");
     lastUpdated.textContent = `Last Updated on : ${date} GMT`;
   }
+  getgoldhistory()
 });
 
 calculatebtn.addEventListener("click", async () => {
@@ -168,4 +170,18 @@ calculatebtn.addEventListener("click", async () => {
   }
 });
 
-
+async function getgoldhistory(){
+  try{
+  const res2 = await fetch("https://xaus.com/api/v1/history")
+  if(!res2.ok){
+    throw new Error("fetching wasn't successful")
+  }
+  const result = await res2.json()
+  highest.textContent = result.ranges?.week.high
+  lowest.textContent = result.ranges?.week.low
+    
+}
+  catch(error){
+    throw new Error(error)
+  }
+}
