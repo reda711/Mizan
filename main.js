@@ -7,6 +7,7 @@ const dot = document.getElementById("dot");
 const calculatebtn = document.getElementById("calculate-price");
 const weight = document.getElementById("metal-weight");
 const weighterror = document.getElementById("weighterror");
+const chart = document.getElementById("history-chart")
 const result = document.getElementById("calculated-price");
 const calculatediv = document.getElementById("calculation-result");
 const metaltype = document.getElementById("metal-type");
@@ -77,6 +78,19 @@ async function getdate() {
     return data.data_state.as_of;
   } catch (error) {
     throw new Error(error);
+  }
+}
+
+async function getgoldhistory(){
+  try{
+  const res2 = await fetch("https://xaus.com/api/v1/history")
+  if(!res2.ok){
+    throw new Error("fetching wasn't successful")
+  }
+  const result = await res2.json()
+}
+  catch(error){
+    throw new Error(error)
   }
 }
 
@@ -170,18 +184,131 @@ calculatebtn.addEventListener("click", async () => {
   }
 });
 
-async function getgoldhistory(){
-  try{
-  const res2 = await fetch("https://xaus.com/api/v1/history")
-  if(!res2.ok){
-    throw new Error("fetching wasn't successful")
+
+  const historyMetal = document.getElementById("history-metal");
+const historyPeriod = document.getElementById("history-period");
+const historyTitle = document.getElementById("history-chart-title");
+const historyCurrency = document.getElementById("history-currency");
+
+let historyChart;
+
+const TROY_OUNCE_IN_GRAMS = 31.1034768;
+
+async function updatePriceHistory() {
+  const currency = select.value;
+  const metal = historyMetal.value;
+  const days = Number(historyPeriod.value);
+
+  historyCurrency.textContent = currency;
+  historyTitle.textContent =
+    `${metal === "gold" ? "Gold" : "Silver"} Price History`;
+
+  try {
+    const [historyResponse, spotResponse] = await Promise.all([
+      fetch("https://xaus.com/api/v1/history"),
+      fetch(
+        `https://xaus.com/api/v1/spot?currency=${encodeURIComponent(currency)}&unit=gram`,
+      ),
+    ]);
+
+    if (!historyResponse.ok || !spotResponse.ok) {
+      throw new Error("The price-history service returned an error.");
+    }
+
+    const [history, spot] = await Promise.all([
+      historyResponse.json(),
+      spotResponse.json(),
+    ]);
+
+    if (
+      !Array.isArray(history.points) ||
+      !Number.isFinite(spot.fx_rate) ||
+      (metal === "silver" &&
+        (!Number.isFinite(spot.gold_silver_ratio) || spot.gold_silver_ratio <= 0))
+    ) {
+      throw new Error("The API returned incomplete or invalid history data.");
+    }
+
+    const points = history.points
+      .filter(
+        (point) =>
+          typeof point.d === "string" &&
+          Number.isFinite(point.c) &&
+          Number.isFinite(Date.parse(point.d)),
+      )
+      .slice(-days);
+
+    if (points.length === 0) {
+      throw new Error("There are no valid history points for this period.");
+    }
+
+    // History is USD per troy ounce. Convert to the selected currency per gram.
+    const goldPrices = points.map(
+      (point) => (point.c / TROY_OUNCE_IN_GRAMS) * spot.fx_rate,
+    );
+    // XAUS provides gold history but only the current gold/silver ratio.
+    // This estimates silver history by applying today's ratio to each gold close.
+    const prices = metal === "silver"
+      ? goldPrices.map((goldPricePergram) =>
+          goldPricePergram / spot.gold_silver_ratio,
+        )
+      : goldPrices;
+
+    if (!prices.every(Number.isFinite)) {
+      throw new Error("The API returned invalid prices for the chart.");
+    }
+
+    highest.textContent = formatHistoryPrice(Math.max(...prices), currency);
+    lowest.textContent = formatHistoryPrice(Math.min(...prices), currency);
+
+    const context = chart.getContext("2d");
+    if (!context) throw new Error("The history canvas is unavailable.");
+
+    if (historyChart) historyChart.destroy();
+
+    historyChart = new Chart(context, {
+      type: "line",
+      data: {
+        labels: points.map((point) => point.d),
+        datasets: [{
+          label: metal === "silver"
+            ? `Estimated silver (${currency} / gram)`
+            : `Gold (${currency} / gram)`,
+          data: prices,
+          borderColor: "#d97706",
+          backgroundColor: "rgba(217, 119, 6, 0.12)",
+          fill: true,
+          tension: 0.25,
+          pointRadius: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: false },
+        },
+      },
+    });
+  } catch (error) {
+    if (historyChart) historyChart.destroy();
+    highest.textContent = "--";
+    lowest.textContent = "--";
+    historyTitle.textContent = "Price history could not be loaded";
+    console.error("Price history error:", error);
   }
-  const result = await res2.json()
-  highest.textContent = result.ranges?.week.high
-  lowest.textContent = result.ranges?.week.low
-    
 }
-  catch(error){
-    throw new Error(error)
-  }
+
+function formatHistoryPrice(value, currency) {
+  return new Intl.NumberFormat("en", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
+
+historyMetal.addEventListener("change", updatePriceHistory);
+historyPeriod.addEventListener("change", updatePriceHistory);
+select.addEventListener("change", updatePriceHistory);
+
+updatePriceHistory();
